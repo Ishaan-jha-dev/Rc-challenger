@@ -2,16 +2,18 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { mockRCs } from '@/data/mockRCs';
+import { getTodayRCs } from '@/app/actions/rc.actions';
 import { CheckCircle, Flame, Clock, BookOpen } from 'lucide-react';
 
-export default function Dashboard() {
+export default async function Dashboard() {
   const todayDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
     year: 'numeric'
   });
+
+  const rcs = await getTodayRCs();
 
   return (
     <div className="min-h-screen bg-neutral-50/50">
@@ -35,7 +37,7 @@ export default function Dashboard() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          {mockRCs.map((rc, index) => {
+          {rcs.map((rc, index) => {
             // Mock completion status
             const isCompleted = index === 0; 
             

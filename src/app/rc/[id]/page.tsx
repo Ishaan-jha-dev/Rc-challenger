@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { mockRCs } from '@/data/mockRCs';
+import { getTodayRCs } from '@/app/actions/rc.actions';
+import { RCPassage } from '@/data/mockRCs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Clock, Pause, Play, ChevronRight, ChevronLeft, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
@@ -17,13 +18,20 @@ export default function RCPracticePage() {
   const { id } = useParams();
   const router = useRouter();
   
-  const rc = mockRCs.find(r => r.id === id);
-  
+  const [rc, setRc] = useState<RCPassage | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState((rc?.estimatedTimeMinutes || 10) * 60);
   const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    getTodayRCs().then((rcs) => {
+      setRc(rcs.find(r => r.id === id) || null);
+      setIsLoading(false);
+    });
+  }, [id]);
 
   useEffect(() => {
     if (!rc || isSubmitted || isPaused) return;
@@ -42,8 +50,12 @@ export default function RCPracticePage() {
     return () => clearInterval(timer);
   }, [rc, isSubmitted, isPaused]);
 
+  if (isLoading) {
+    return <div className="min-h-screen bg-neutral-50 flex items-center justify-center font-medium text-neutral-500">Loading passage...</div>;
+  }
+
   if (!rc) {
-    return <div className="p-8 text-center">RC not found</div>;
+    return <div className="p-8 text-center text-neutral-600 font-medium mt-10">RC not found. <button onClick={() => router.push('/')} className="text-primary-500 hover:underline">Go back home</button></div>;
   }
 
   const formatTime = (seconds: number) => {
