@@ -5,6 +5,9 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { getTodayRCs } from '@/app/actions/rc.actions';
 import { CheckCircle, Flame, Clock, BookOpen } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // Allow longer execution time if on Vercel Pro, though Free tier is 10s or 15s.
+
 export default async function Dashboard() {
   const todayDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',

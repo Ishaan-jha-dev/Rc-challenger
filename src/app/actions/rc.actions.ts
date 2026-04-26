@@ -27,13 +27,39 @@ export async function getTodayRCs(): Promise<RCPassage[]> {
       return mockRCs;
     }
 
-    // 3. Transform news articles into RCs concurrently
+    // 3. Transform news articles into RCs concurrently with a strict 10s timeout to survive Vercel Serverless limits
     console.log(`Generating ${articles.length} RCs from news...`);
-    const generationPromises = articles.slice(0, 5).map(article => generateRCFromNews(article));
-    const generatedRCs = (await Promise.all(generationPromises)).filter((rc): rc is RCPassage => rc !== null);
+    
+    // We only try to generate 2 to save time, and fill the rest with mocks
+    const targetArticles = articles.slice(0, 2);
+    
+    const timeoutPromise = new Promise<RCPassage[]>((_, reject) => {
+      setTimeout(() => reject(new Error('AI Generation Timeout')), 9000); // 9 seconds max
+    });
+
+    const generationTask = async () => {
+      const promises = targetArticles.map(article => generateRCFromNews(article));
+      const results = await Promise.all(promises);
+      return results.filter((rc): rc is RCPassage => rc !== null);
+    };
+
+    let generatedRCs: RCPassage[] = [];
+    try {
+      generatedRCs = await Promise.race([generationTask(), timeoutPromise]);
+    } catch (e) {
+      console.warn("AI generation timed out or failed, falling back to mock data.", e);
+      return mockRCs;
+    }
 
     if (generatedRCs.length === 0) {
       return mockRCs;
+    }
+
+    // Fill remaining slots with mock data if we didn't generate 5
+    while (generatedRCs.length < 5) {
+      const randomMock = { ...mockRCs[Math.floor(Math.random() * mockRCs.length)] };
+      randomMock.id = `mock-${Date.now()}-${generatedRCs.length}`;
+      generatedRCs.push(randomMock);
     }
 
     // 4. Cache them
