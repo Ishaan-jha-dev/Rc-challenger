@@ -50,39 +50,44 @@ OUTPUT FORMAT (JSON ONLY, NO MARKDOWN TAGS):
 `;
 
 export async function generateRCFromNews(article: NewsArticle): Promise<RCPassage | null> {
-  const apiKey = process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY;
+  const apiKey = process.env.NVIDIA_API_KEY;
 
   if (!apiKey) {
-    console.warn("No AI API key found. Using a fallback mock RC instead of generating a new one.");
-    // In production, you would return null or throw an error. 
-    // Here we return a randomized mock RC to ensure the app continues to work for the demo.
+    console.warn("No NVIDIA_API_KEY found. Using a fallback mock RC instead of generating a new one.");
     const fallbackRC = { ...mockRCs[Math.floor(Math.random() * mockRCs.length)] };
     fallbackRC.id = `rc-${Date.now()}`; // unique ID
     return fallbackRC;
   }
 
   try {
-    // Example of how the Claude API call would look:
-    /*
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json'
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20240620',
+        model: 'z-ai/glm-5.1',
         max_tokens: 4000,
-        system: MASTER_PROMPT,
+        temperature: 0.7,
+        top_p: 1,
         messages: [
+          { role: 'system', content: MASTER_PROMPT },
           { role: 'user', content: `Generate a CAT RC based on this article:\n\nTitle: ${article.title}\n\nContent: ${article.content}` }
         ]
       })
     });
     
+    if (!response.ok) {
+      throw new Error(`NVIDIA API error: ${response.status} ${response.statusText}`);
+    }
+
     const data = await response.json();
-    const jsonString = data.content[0].text;
+    let jsonString = data.choices[0].message.content;
+    
+    // Clean up potential markdown formatting (```json ... ```)
+    jsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
+    
     const rcData = JSON.parse(jsonString);
     
     return {
@@ -90,11 +95,6 @@ export async function generateRCFromNews(article: NewsArticle): Promise<RCPassag
       date: new Date().toISOString().split('T')[0],
       ...rcData
     };
-    */
-    
-    // For now, since we're using a placeholder, we just return the mock.
-    // Replace the above block when you add your actual API key!
-    return mockRCs[0];
   } catch (error) {
     console.error("AI Generation failed:", error);
     return null;
