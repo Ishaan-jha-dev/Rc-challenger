@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { getTodayRCs } from '@/app/actions/rc.actions';
+import { RCGeneratorUI } from '@/components/rc-generator-ui';
 import { CheckCircle, Flame, Clock, BookOpen } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -38,6 +39,8 @@ export default async function Dashboard() {
           <h2 className="text-2xl font-bold text-neutral-900 tracking-tight">Today's Challenge</h2>
           <p className="text-neutral-600">{todayDate}</p>
         </div>
+
+        <RCGeneratorUI />
 
         <div className="grid gap-4 md:grid-cols-2">
           {rcs.map((rc, index) => {

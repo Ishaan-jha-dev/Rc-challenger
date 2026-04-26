@@ -72,3 +72,34 @@ export async function getTodayRCs(): Promise<RCPassage[]> {
     return mockRCs; // Fallback so the UI never breaks
   }
 }
+
+export async function generateCustomRC(topic: string): Promise<RCPassage | null> {
+  try {
+    const categoryMap: Record<string, string> = {
+      'Science': 'technology',
+      'Business': 'business',
+      'Health': 'health',
+      'Sports': 'sports',
+      'World': 'world',
+      'Entertainment': 'entertainment'
+    };
+
+    const gnewsCategory = categoryMap[topic] || 'general';
+    const articles = await fetchDailyNews(gnewsCategory);
+    
+    if (!articles || articles.length === 0) return null;
+
+    // Use the first article for the custom generation
+    const rc = await generateRCFromNews(articles[0]);
+    
+    if (rc && cachedDailyRCs) {
+      // Add to start of list for the session
+      cachedDailyRCs = [rc, ...cachedDailyRCs].slice(0, 10);
+    }
+
+    return rc;
+  } catch (error) {
+    console.error("Custom generation failed:", error);
+    return null;
+  }
+}
